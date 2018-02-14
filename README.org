@@ -1,0 +1,29 @@
+#+title: Data Analysis Toolkit
+
+A collection of data analysis tools for use with Python 3
+
+* Analysis frameworks
+- ROOT
+- Pandas
+- Spark
+- Histogrammar
+
+* Organisation of modules
+- ~io~: different I/O formats like:
+  - Parquet (supported by ~pyarrow~ and ~pyspark~)
+  - CSV
+  - JSON
+  - HDF5
+  - Filesystem
+- ~pandas~: Pandas utilities
+- ~root~: ROOT utilities
+  - Fixes to ROOT eccentricities and some pythonifications
+  - Histogram utilities
+  - RooFit utilities
+- ~spark~:
+  - DataFrame utilities
+- ~hg~: Histogrammar utilities
+- ~plot~:
+- ~utils~:
+  - ~cli~
+  - ~iter~
