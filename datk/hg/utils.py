@@ -14,20 +14,25 @@ aggr_t = {
 }
 
 
-def get_aggr_val(aggregator):
-    """Get aggregator value based on aggregator type
+def eval_aggr(aggregator):
+    """Get aggregator value based on aggregator type.
+
+    If the aggregator is unsupported, return the object as is (as returned by
+    aggr.values).
 
     """
     return getattr(aggregator, aggr_t.get(type(aggregator), 'values'))
 
 
-def aggregate_sparsebins(cont, prop='values'):
-    """Aggregate the boundaries of a binning with sparse bins
+def sparsebin_bounds(cont, prop='values'):
+    """Calculate the boundaries of a sparse binning.
 
-    cont        -- the container object
+    cont -- the container object
 
-    prop        -- specify which property is used to access the values.
-                   If None, treat cont as a list of values.
+    prop -- specify which property is used to access the values.
+            If None, treat cont as a list of values.
+
+    Returns a tuple: (# of bins, lowest bind edge, highest bin edge)
 
     """
     cont = getattr(cont, prop) if prop else cont
