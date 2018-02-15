@@ -46,6 +46,13 @@ def get_properties(obj, props):
     return [getattr(obj, p) for p in props]
 
 
+def get_property(objs, prop):
+    """Retrieve a property from a sequence of objects
+
+    """
+    return [getattr(o, prop) for o in objs]
+
+
 def sanitise(string):
     """Sanitise string for use as group/directory name"""
     import re
