@@ -1,6 +1,8 @@
 """Translate Histogrammar objects to numpy datastructures"""
 
 from datk.hg.utils import eval_aggr
+from datk.hg.utils import sparsebin_props, sparsebin_bounds
+
 
 
 def eval_container(cont, prop='values', filter_expr=None, replace_by=0):
@@ -12,7 +14,6 @@ def eval_container(cont, prop='values', filter_expr=None, replace_by=0):
     cont        -- the container object
 
     prop        -- specify which property is used to access the values.
-                   If None, treat cont as a list of values.
 
     filter_expr -- whether to filter and replace by replace_by
 
@@ -24,14 +25,19 @@ def eval_container(cont, prop='values', filter_expr=None, replace_by=0):
     the items are returned as is.
 
     """
-    cont = getattr(cont, prop) if prop else cont
+    vals = getattr(cont, prop) if prop else cont
+    if cont.factory == SparselyBin:
+        nbins, offset, _, __ = sparsebin_props(cont)
+    else:
+        nbins, offset = len(vals), 0
+    # access by index to support both Bin and SparselyBin
     if filter_expr:
         if replace_by is None:
-            res = [eval_aggr(i) for i in cont
-                   if not filter_expr(eval_aggr(i))]
+            res = [eval_aggr(vals[i + offset]) for i in range(nbins)
+                   if not filter_expr(eval_aggr(vals[i + offset]))]
         else:
-            res = [replace_by if filter_expr(eval_aggr(i))
-                   else eval_aggr(i) for i in cont]
+            res = [replace_by if filter_expr(eval_aggr(vals[i + offset]))
+                   else eval_aggr(vals[i + offset]) for i in range(nbins)]
     else:
-        res = [eval_aggr(i) for i in cont]
+        res = [eval_aggr(vals[i + offset]) for i in range(nbins)]
     return res

@@ -3,6 +3,7 @@
 import numpy as np
 
 from utils.helpers import import_from
+from datk.utils.helpers import get_properties
 
 # supported aggregator types
 aggr_t = {
@@ -22,6 +23,11 @@ def eval_aggr(aggregator):
 
     """
     return getattr(aggregator, aggr_t.get(type(aggregator), 'values'))
+def sparsebin_props(cont):
+    low, binlo, high, binhi = get_properties(
+        cont, ('low', 'minBin', 'high', 'maxBin'))
+    nbins = binhi - binlo + 1
+    return (int(nbins), int(binlo), low, high)
 
 
 def sparsebin_bounds(cont, prop='values'):
