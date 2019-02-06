@@ -1,7 +1,13 @@
 # coding=utf-8
 """Helper utilities"""
 
+import resource
+import re
+from datetime import datetime
+from copy import deepcopy
+from functools import wraps
 from importlib import import_module
+from warnings import filterwarnings
 
 import numpy as np
 
@@ -31,14 +37,12 @@ def get_property(objs, prop):
 
 def sanitise(string):
     """Sanitise string for use as group/directory name"""
-    import re
-    return '_'.join(re.findall(re.compile('[^ &()-]+'), string))
+    return "_".join(re.findall(re.compile("[^ &()-]+"), string))
 
 
 def str2datetime(timestamp):
     """Convert timestamp strings to time tuples"""
-    from datetime import datetime
-    return datetime.strptime(timestamp.split('.')[0], '%Y-%m-%dT%H:%M:%S')
+    return datetime.strptime(timestamp.split(".")[0], "%Y-%m-%dT%H:%M:%S")
 
 
 def fullpath(_ls):
@@ -49,11 +53,11 @@ def fullpath(_ls):
     path output (e.g. use with os.listdir).
 
     """
-    from functools import wraps
 
     @wraps(_ls)
     def _ls_fullpath(path):
-        return ['{}/{}'.format(path, f) for f in _ls(path)]
+        return ["{}/{}".format(path, f) for f in _ls(path)]
+
     return _ls_fullpath
 
 
@@ -64,28 +68,38 @@ def suppress_warnings():
     instead of importlib.
 
     """
-    from numpy import VisibleDeprecationWarning
-    from warnings import filterwarnings
-    filterwarnings(action='ignore', category=ImportWarning,
-                   message='Not importing directory.*')
-    filterwarnings(action='ignore', category=ResourceWarning,
-                   message='unclosed file.*')
-    filterwarnings(action='ignore', category=PendingDeprecationWarning,
-                   message='the imp module is deprecated.*')
-    filterwarnings(action='ignore', category=VisibleDeprecationWarning,
-                   message='using a non-integer number.*')
-    filterwarnings(action='ignore', category=DeprecationWarning,
-                   message='.*inspect.getargspec() is deprecated.*')
+    filterwarnings(
+        action="ignore", category=ImportWarning, message="Not importing directory.*"
+    )
+    filterwarnings(action="ignore", category=ResourceWarning, message="unclosed file.*")
+    filterwarnings(
+        action="ignore",
+        category=PendingDeprecationWarning,
+        message="the imp module is deprecated.*",
+    )
+    filterwarnings(
+        action="ignore",
+        category=np.VisibleDeprecationWarning,
+        message="using a non-integer number.*",
+    )
+    filterwarnings(
+        action="ignore",
+        category=DeprecationWarning,
+        message=".*inspect.getargspec() is deprecated.*",
+    )
 
 
 def resource_summary(prefix="", raw=False):
     """Get memory usage"""
-    import resource
     usage = resource.getrusage(resource.RUSAGE_SELF)
     if raw:
-        return (usage[0], usage[1],
-                (usage[2]*resource.getpagesize())/1000000.0)
+        return (usage[0], usage[1], (usage[2] * resource.getpagesize()) / 1000000.0)
     else:
-        print('{}: usertime={} systime={} mem={} mb'.format(
-            prefix, usage[0], usage[1],
-            (usage[2]*resource.getpagesize())/1000000.0))
+        print(
+            "{}: usertime={} systime={} mem={} mb".format(
+                prefix,
+                usage[0],
+                usage[1],
+                (usage[2] * resource.getpagesize()) / 1000000.0,
+            )
+        )

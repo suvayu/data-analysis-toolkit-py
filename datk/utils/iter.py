@@ -1,6 +1,7 @@
 """Iteration tools"""
 
 from collections import Sequence
+from functools import wraps
 
 
 def flatten_list(lst):
@@ -51,7 +52,7 @@ def call_hook(hook):
     try:
         hook[0](*hook[1:])
     except TypeError:
-        print('Ignoring hook: {} is not a callable'.format(hook[0]))
+        print("Ignoring hook: {} is not a callable".format(hook[0]))
 
 
 def iterate(recipe):
@@ -93,7 +94,6 @@ def iterate(recipe):
     >>> proc_vector(vector, True, foo, bar='baz')   # infinite
 
     """
-    from functools import wraps
 
     @wraps(recipe)
     def exec_recipe(iterable, inf, post, *args, **kwargs):
@@ -106,10 +106,11 @@ def iterate(recipe):
                     if niter % len(iterable) == 0 and len(post):
                         call_hook(post)
             except KeyboardInterrupt:
-                print('Stopped at iteration {:d}'.format(niter))
+                print("Stopped at iteration {:d}".format(niter))
         else:
             for index, item in enumerate(iterable):
                 recipe(iterable, index, item, *args, **kwargs)
             if len(post):
                 call_hook(post)
+
     return exec_recipe
