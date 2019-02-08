@@ -21,6 +21,24 @@ def is_nan_or_inf(x):
     return np.isnan(x) or np.isinf(x)
 
 
+def add_class_property(cls, prop):
+    """Dynamically add a property and a setter that does deepcopy.
+
+    Note: a deleter is not defined, so if your property needs special care to
+    delete, please do not use this helper function.
+
+    """
+
+    def _getter(self):
+        return getattr(self, f"_{prop}", None)
+
+    def _setter(self, val):
+        setattr(self, f"_{prop}", deepcopy(val))
+
+    _prop = property(_getter, _setter, None, f"Property {prop}")
+    setattr(cls, prop, _prop)
+
+
 def get_properties(obj, props):
     """Retrieve a sequence of properties from an object
 
