@@ -47,6 +47,36 @@ def intervals(iterable):
         yield (iterable[i], iterable[i + 1])
 
 
+class LookAheadItr(object):
+    """Iterator that looks ahead.
+
+    Iterating returns the current and the next value.  It is also accessible
+    via the peek property of the iterator.
+
+    """
+    def __init__(self, itr):
+        self.itr = itr
+        self.exhausted = False
+        self.__advance__()
+
+    def __next__(self):
+        if self.exhausted:
+            raise StopIteration()
+        cur = self.peek
+        self.__advance__()
+        return (cur, self.peek)
+
+    def __advance__(self):
+        try:
+            self.peek = next(self.itr)
+        except StopIteration:
+            self.peek = None
+            self.exhausted = True
+
+    def __iter__(self):
+        return self
+
+
 def call_hook(hook):
     """Call the hook function"""
     try:
