@@ -27,12 +27,14 @@ def csv2spark(session, csvfile, *args, **kwargs):
 
     """
     from collections.abc import Iterable
-    from pyspark.sql.types import (StructType, StructField)
-    if 'header' not in kwargs:
-        kwargs['header'] = True
-    if 'schema' in kwargs and isinstance(kwargs['schema'], Iterable):
-        kwargs['schema'] = StructType([StructField(i, j, k)
-                                       for i, j, k in kwargs['schema']])
+    from pyspark.sql.types import StructType, StructField
+
+    if "header" not in kwargs:
+        kwargs["header"] = True
+    if "schema" in kwargs and isinstance(kwargs["schema"], Iterable):
+        kwargs["schema"] = StructType(
+            [StructField(i, j, k) for i, j, k in kwargs["schema"]]
+        )
     return session.read.csv(csvfile, *args, **kwargs)
 
 
@@ -66,11 +68,12 @@ def csv2pandas(csvfile, transform=None, aargs=[], akwargs={}, *args, **kwargs):
 
     suppress_warnings()
     import pandas as pd
+
     with open(csvfile) as csvfile:
-        if 'sep' not in kwargs:
-            kwargs['sep'] = ','
-        if 'quotechar' not in kwargs:
-            kwargs['quotechar'] = '"'
+        if "sep" not in kwargs:
+            kwargs["sep"] = ","
+        if "quotechar" not in kwargs:
+            kwargs["quotechar"] = '"'
         df = pd.read_table(csvfile, *args, **kwargs)
         if transform:
             df = df.apply(transform, *aargs, axis=1, reduce=False, **akwargs)
