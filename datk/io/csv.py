@@ -62,7 +62,8 @@ def csv2pandas(csvfile, transform=None, aargs=[], akwargs={}, *args, **kwargs):
     ...     return (row[0], str2datetime(row[1]), json.loads(row[2]))
 
     """
-    from logix.utils import suppress_warnings
+    from datk.utils.helpers import suppress_warnings
+
     suppress_warnings()
     import pandas as pd
     with open(csvfile) as csvfile:
