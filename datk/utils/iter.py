@@ -1,7 +1,10 @@
 """Iteration tools"""
 
-from collections import Sequence
+from collections import Sequence, deque
+from collections.abc import Iterator
+from itertools import islice
 from functools import wraps
+from copy import deepcopy
 
 
 def flatten_list(lst):
@@ -24,7 +27,7 @@ def flatten_dict(pydict):
     """
     pydict = deepcopy(pydict)
     if not isinstance(pydict, dict):
-        raise ValueError("Only dictionaries are supported: {}".format(type(pydict)))
+        raise ValueError(f"Only dictionaries are supported: {type(pydict)}")
     children = {}
     for key, val in pydict.items():
         if isinstance(val, dict):
@@ -54,6 +57,7 @@ class LookAheadItr(object):
     via the peek property of the iterator.
 
     """
+
     def __init__(self, itr):
         self.itr = itr
         self.exhausted = False
@@ -77,6 +81,39 @@ class LookAheadItr(object):
         return self
 
 
+class PeekingItr(object):
+    """Iterator that remembers the previous value.
+
+    This iterator iterates in two modes:
+    1. iterating in pairs: (i_0, i_1), ... (i_{n-1}, i_n)
+
+    >>> [(prev, cur) for prev, cur in PeekingItr(iter(range(5)), paired=True)]
+    [(0, 1), (1, 2), (2, 3), (3, 4)]
+
+    2. start iteration before the first element: (None, i_0), ... (i_{n-1}, i_n)
+
+    >>> [(prev, cur) for prev, cur in PeekingItr(iter(range(5)), paired=False)]
+    [(None, 0), (0, 1), (1, 2), (2, 3), (3, 4)]
+
+    Each iteration returns the current and the previous value.  The current and
+    previous values are also accessible via the 'cur' and 'prev' properties of
+    the iterator.
+    """
+
+    def __init__(self, itr, paired=True):
+        self.itr = itr if isinstance(itr, Iterator) else iter(itr)
+        self.prev = None
+        self.cur = next(self.itr) if paired else None
+
+    def __next__(self):
+        self.prev = self.cur
+        self.cur = next(self.itr)
+        return (self.prev, self.cur)
+
+    def __iter__(self):
+        return self
+
+
 def consume(iterator, n=None):
     """Advance the iterator n-steps ahead. If n is None, consume entirely.
 
@@ -85,10 +122,10 @@ def consume(iterator, n=None):
     # Use functions that consume iterators at C speed.
     if n is None:
         # feed the entire iterator into a zero-length deque
-        collections.deque(iterator, maxlen=0)
+        deque(iterator, maxlen=0)
     else:
         # advance to the empty slice starting at position n
-        next(islice(iterator, n, n), None)
+        next(islice(iterator, n), None)
 
 
 def call_hook(hook):
@@ -150,7 +187,7 @@ def iterate(recipe):
                     if niter % len(iterable) == 0 and len(post):
                         call_hook(post)
             except KeyboardInterrupt:
-                print("Stopped at iteration {:d}".format(niter))
+                print(f"Stopped at iteration {niter:d}")
         else:
             for index, item in enumerate(iterable):
                 recipe(iterable, index, item, *args, **kwargs)
