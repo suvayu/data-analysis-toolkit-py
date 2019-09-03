@@ -25,6 +25,7 @@ from datk.hg.utils import sparsebin_props, sparsebin_bounds
 
 # supported aggregator types
 aggr_t = {
+    import_from('histogrammar', 'SparselyBin'): 'bins',
     import_from('histogrammar', 'Sum'): 'sum',
     import_from('histogrammar', 'Average'): 'mean',
     import_from('histogrammar', 'Maximize'): 'max',
@@ -64,18 +65,60 @@ def eval_container(cont, prop='values', filter_expr=None, replace_by=0):
 
     """
     vals = getattr(cont, prop) if prop else cont
-    if cont.factory == SparselyBin:
-        nbins, offset, _, __ = sparsebin_props(cont)
-    else:
-        nbins, offset = len(vals), 0
-    # access by index to support both Bin and SparselyBin
     if filter_expr:
         if replace_by is None:
-            res = [eval_aggr(vals[i + offset]) for i in range(nbins)
-                   if not filter_expr(eval_aggr(vals[i + offset]))]
+            res = [eval_aggr(i) for i in vals if not filter_expr(eval_aggr(i))]
         else:
-            res = [replace_by if filter_expr(eval_aggr(vals[i + offset]))
-                   else eval_aggr(vals[i + offset]) for i in range(nbins)]
+            res = [replace_by if filter_expr(eval_aggr(i))
+                   else eval_aggr(i) for i in vals]
     else:
-        res = [eval_aggr(vals[i + offset]) for i in range(nbins)]
+        res = [eval_aggr(i) for i in vals]
     return res
+
+
+def eval_sparse_container(cont):
+    _1, offset, _2, _3 = sparsebin_props(cont)
+    res = [(n - offset + 1, eval_aggr(cont.bins[n])) for n in cont.bins.keys()]
+    return res
+
+
+def eval_recursively(cont, prop='values', filter_expr=None, replace_by=0,
+                     no_metadata=True):
+    if cont.factory == Bin:
+        res = eval_container(cont, prop, filter_expr, replace_by)
+    elif cont.factory == SparselyBin:
+        res = eval_sparse_container(cont)
+    else:
+        raise ValueError('unsupported binning: ' + res[0].name)
+
+    if no_metadata is False:
+        if cont.factory == Bin:
+            metadata = get_property((cont, cont.underflow, cont.overflow),
+                                    'entries')
+        else:  # if unsupported, exception is raised above
+            metadata = sparsebin_props(cont)
+
+    # contents
+    if np.isreal(res[0]) or isinstance(res[0], np.ndarray):
+        if no_metadata:
+            return np.array(res)
+        else:
+            return np.array(res), metadata, cont.factory
+    elif res[0].factory == Bin:
+        vals = [eval_recursively(each, prop, filter_expr, replace_by, i)
+                for i, each in enumerate(res)]
+        vals[0], vals_meta, vals_factory = vals[0]
+        if no_metadata:
+            return vals
+        else:
+            return vals, vals_meta, vals_factory
+    elif res[0].factory == SparselyBin:
+        vals = [eval_recursively(each, prop, filter_expr, replace_by)
+                for each in res]
+        vals_meta = sparsebin_bounds(cont, 'values')
+        if no_metadata:
+            return vals
+        else:
+            return vals, vals_meta, res[0].factory
+    else:
+        raise ValueError('unsupported binning: ' + res[0].name)
