@@ -164,12 +164,27 @@ def read_parquet(root_path, filters, fs=None):
     return tbl.to_pandas()
 
 
-def date2num(datestr, datesep="-"):
-    """Convert date string in YYYY-MM-DD format to an YYYYMMDD integer"""
-    return int(datestr.replace(datesep, ""))
+def date2num(date, **kwargs):
+    """Convert date to an YYYYMMDD integer
+
+    Parameters
+    ----------
+    date
+        This can be anything that pandas.Timestamp understands
+
+    **kwargs
+        Any keyword arguments are passed on to pandas.Timestamp
+
+    Returns
+    -------
+    int
+        Date converted to an integer in YYYYMMDD format
+
+    """
+    return int(pd.Timestamp(date, **kwargs).strftime("%Y%m%d"))
 
 
-def get_daterange_filter(start, end, datesep="-"):
+def get_daterange_filter(start, end):
     """Convert string date range to daterange filters understood by pyarrow
 
     (see docstring of `read_parquet` above)
@@ -180,14 +195,11 @@ def get_daterange_filter(start, end, datesep="-"):
     Parameters
     ----------
     start
-        Starting date of the date range. The date should be in the format
-        yyyy-mm-dd.  The separator '-' is customisable.
+        Starting date of the date range. The date can be any timestamp
+        understood by pandas.Timestamp.
 
     end
         End date
-
-    datesep (optional, default='-')
-        Separator in date string
 
     Returns
     -------
@@ -200,7 +212,7 @@ def get_daterange_filter(start, end, datesep="-"):
     if pd.Timestamp(start) > pd.Timestamp(end):
         raise ValueError(f"{start} comes after {end}")
 
-    start, end = date2num(start, datesep), date2num(end, datesep)
+    start, end = date2num(start), date2num(end)
     if start == end:
         return [(DATE_PART, "==", start)]
     else:
