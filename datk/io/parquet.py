@@ -6,6 +6,7 @@ from datetime import datetime
 from itertools import product, chain
 from pathlib import Path
 from uuid import uuid4
+import json
 
 import numpy as np
 import pandas as pd
@@ -18,7 +19,10 @@ from datk.io.fs import dirpath
 logger = logging.getLogger(__name__)
 
 
-def to_parquet_file(df, path, fs=None):
+METADATA_ATTR = b"_metadata"
+
+
+def to_parquet_file(df, path, fs=None, metadata=None):
     """Write a dataframe to parquet in a filesystem agnostic manner
 
     Parameters
@@ -33,12 +37,23 @@ def to_parquet_file(df, path, fs=None):
         A filesystem instance conforming to the __fspath__ API (see the doc
         string in read_parquet)
 
+    metadata (optional)
+        Dataframe metadata that is stored with the table schema metadata.  If
+        None, and `pandas.DataFrame._metadata` is not empty, that is stored
+        instead.  Since on read it is restored as `pandas.DataFrame._metadata`,
+        this should be a list.
+
     Returns
     -------
     None
 
     """
     tbl = pa.Table.from_pandas(df)
+    metadata = metadata or df._metadata
+    if metadata:
+        tbl = tbl.replace_schema_metadata(
+            {**tbl.schema.metadata, **{METADATA_ATTR: json.dumps(metadata)}}
+        )
     if fs:
         pq.write_table(tbl, path, filesystem=fs)
     else:
@@ -120,7 +135,10 @@ def read_parquet_file(path, fs=None):
     fs_open = fs.open if fs else open
     with fs_open(path, mode="rb") as pqfile:
         tbl = pq.read_table(pqfile, use_pandas_metadata=True)
-        return tbl.to_pandas()
+        _metadata = json.loads(tbl.schema.metadata[METADATA_ATTR])
+        df = tbl.to_pandas()
+        df._metadata += _metadata
+        return df
 
 
 def read_parquet(root_path, filters, fs=None):
