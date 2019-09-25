@@ -135,9 +135,10 @@ def read_parquet_file(path, fs=None):
     fs_open = fs.open if fs else open
     with fs_open(path, mode="rb") as pqfile:
         tbl = pq.read_table(pqfile, use_pandas_metadata=True)
-        _metadata = json.loads(tbl.schema.metadata[METADATA_ATTR])
         df = tbl.to_pandas()
-        df._metadata += _metadata
+        _metadata = json.loads(tbl.schema.metadata.get(METADATA_ATTR, "[]"))
+        if _metadata:
+            df._metadata += _metadata
         return df
 
 
