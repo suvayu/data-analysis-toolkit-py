@@ -87,9 +87,13 @@ def suppress_warnings():
 
     """
     filterwarnings(
-        action="ignore", category=ImportWarning, message="Not importing directory.*"
+        action="ignore",
+        category=ImportWarning,
+        message="Not importing directory.*",
     )
-    filterwarnings(action="ignore", category=ResourceWarning, message="unclosed file.*")
+    filterwarnings(
+        action="ignore", category=ResourceWarning, message="unclosed file.*"
+    )
     filterwarnings(
         action="ignore",
         category=PendingDeprecationWarning,
@@ -110,14 +114,8 @@ def suppress_warnings():
 def resource_summary(prefix="", raw=False):
     """Get memory usage"""
     usage = resource.getrusage(resource.RUSAGE_SELF)
+    usage = (*usage[:2], (usage[2] * resource.getpagesize()) / 1e6)
     if raw:
-        return (usage[0], usage[1], (usage[2] * resource.getpagesize()) / 1000000.0)
+        return usage
     else:
-        print(
-            "{}: usertime={} systime={} mem={} mb".format(
-                prefix,
-                usage[0],
-                usage[1],
-                (usage[2] * resource.getpagesize()) / 1000000.0,
-            )
-        )
+        print("{}: usertime={} systime={} mem={} mb".format(prefix, *usage))
